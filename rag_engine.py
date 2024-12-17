@@ -1,10 +1,11 @@
 from langchain_groq import ChatGroq
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains import RetrievalQA
 import os
 from dotenv import load_dotenv
+import pandas as pd
+from langchain_community.vectorstores.chroma import Chroma
 
 class RAGEngine:
     def __init__(self, df):
@@ -66,22 +67,32 @@ class RAGEngine:
         except Exception as e:
             return f"Error generating insights: {str(e)}"
         
-    def answer_question(self, question):
-        """Answer specific questions about the data"""
+    def answer_question(self, question: str) -> str:
         try:
-            qa_chain = RetrievalQA.from_chain_type(
-                llm=self.llm,
-                chain_type="stuff",
-                retriever=self.retriever
-            )
-            
-            enhanced_question = f"""Based on the dataset, please answer this question: {question}
-            
-            Provide specific details and numbers when relevant. If the answer requires assumptions, please state them."""
-            
-            return qa_chain.run(enhanced_question)
+            # Simple data analysis based on the question
+            if 'total' in question.lower():
+                numeric_cols = self.df.select_dtypes(include=['int64', 'float64']).columns
+                if len(numeric_cols) > 0:
+                    total = self.df[numeric_cols[0]].sum()
+                    return f"The total for {numeric_cols[0]} is {total:,.2f}"
+                
+            elif 'average' in question.lower() or 'mean' in question.lower():
+                numeric_cols = self.df.select_dtypes(include=['int64', 'float64']).columns
+                if len(numeric_cols) > 0:
+                    mean = self.df[numeric_cols[0]].mean()
+                    return f"The average for {numeric_cols[0]} is {mean:,.2f}"
+                
+            elif 'count' in question.lower():
+                return f"The total number of records is {len(self.df)}"
+                
+            elif 'columns' in question.lower():
+                return f"The columns in the dataset are: {', '.join(self.df.columns)}"
+                
+            else:
+                return "I can help you analyze your data. Try asking about totals, averages, counts, or columns."
+                
         except Exception as e:
-            return f"Error answering question: {str(e)}"
+            return f"Error analyzing data: {str(e)}"
             
     def get_column_analysis(self, column_name):
         """Generate specific analysis for a given column"""
