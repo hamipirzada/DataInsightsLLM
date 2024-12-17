@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-from utils.data_processor import DataProcessor
-from utils.visualization import Visualizer
-from utils.rag_engine import RAGEngine
+from data_processor import DataProcessor
+from visualization import Visualizer
+from rag_engine import RAGEngine
 import plotly.express as px
 from io import BytesIO
 import traceback
